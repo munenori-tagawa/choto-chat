@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>ちょこっとチャットしよっと</title>
+    <link rel="stylesheet" href="style.css/chat.css">
+  </head>
+
+
+  <body>
+    <h1 class="title">ちょこっとチャットしよっと</h1>
+    <div class="wrapper">
+      <div class="chat-panel" id="scroller">
+        <ul class="chat-messages" id='messages'>
+          <li id="dummy">まだメッセージがありません</li>
+        </ul>
+      </div>
+
+      <div class="user-panel-wrap">
+        <div class="user-panel">
+          <p class="user-panel__input"><span>name</span><input type='text' class="form-control" id="nameInput" placeholder="please name"></p>
+          <p class="user-panel__input"><span>coments</span><textarea class="form-control" id="messageInput" placeholder="please coments"></textarea></p>
+        </div>
+      </div>
+    </div>
+
+
+    <script type="module">
+      // Import the functions you need from the SDKs you need
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/9.14.0/firebase-app.js";
+      // TODO: Add SDKs for Firebase products that you want to use
+      // https://firebase.google.com/docs/web/setup#available-libraries
+      import { getDatabase, ref, push, set, onChildAdded, remove, onChildRemoved } from "https://www.gstatic.com/firebasejs/9.14.0/firebase-database.js";
+      // Your web app's Firebase configuration
+      
+    
+      // Initialize Firebase
+      const app = initializeApp(firebaseConfig);
+
+      const db = getDatabase(app);
+      const dbRef = ref(db, "choto-chat");
+      var scroller = document.getElementById('scroller');
+      var messageField = document.getElementById('messageInput');
+      var nameField = document.getElementById('nameInput');
+      var messageList = document.getElementById('messages');
+      var dummy =  document.getElementById('dummy');
+
+      messageField.addEventListener('keypress', function (e) {
+        if (e.keyCode === 13 && e.shiftKey) {
+          return false;
+        } else if (e.keyCode === 13) {
+
+          var username = nameField.value;
+          var message = messageField.value;
+
+          if (!username) {
+            alert('名前を書いてね～');
+            return false;
+          }
+
+          if (!message.trim()) {
+            alert("なんか書いてよ～");
+            messageField.value = '';
+            return false;
+          }
+
+          const msg = {
+            uname: username,
+            text: message,
+      };
+
+      const newPostRef = push(dbRef);
+          set(newPostRef, msg);
+          setTimeout(function() {
+           messageField.value = '';
+             scroller.scrollTop = messageList.clientHeight;
+          }, 100);
+        }
+       });
+
+      
+      onChildAdded(dbRef, function (data) {
+        
+        removeDummy();
+
+        
+        var msg = data.val();
+        var username = msg.uname; 
+        var message = msg.text;
+
+        
+        var li = document.createElement('li');
+        li.classList.add('before');
+        li.innerHTML = username + '<span class="small">さん</span><br><span class="message">' + message.replace(/\r?\n/g, '<br>') + '</span>';
+        messageList.append(li);
+        scroller.scrollTop = messageList.clientHeight;
+        setTimeout(function() {
+          li.classList.remove('before');
+        }, 100);
+      });
+    
+      function removeDummy() {
+        if (dummy) {
+          dummy.parentNode.removeChild(dummy);
+          dummy = "";
+        }
+      }
+    </script>
+  </body>
+</html>
